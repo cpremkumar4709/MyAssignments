@@ -408,15 +408,15 @@ function generateSignals(prices, volumes, currentPrice) {
         });
     }
 
-    // 6. Price vs SMA 50 (weight: 10)
-    const sma50 = calculateSMA(prices, Math.min(prices.length, 30));
-    if (sma50 !== null) {
+    // 6. Price vs SMA 30 (weight: 10)
+    const sma30 = calculateSMA(prices, Math.min(prices.length, 30));
+    if (sma30 !== null) {
         const weight = 10;
         totalWeight += weight;
         let signal, description;
-        const diff = ((currentPrice - sma50) / sma50) * 100;
+        const diff = ((currentPrice - sma30) / sma30) * 100;
 
-        if (currentPrice > sma50) {
+        if (currentPrice > sma30) {
             signal = 'buy';
             buyScore += weight * Math.min(0.8, 0.4 + Math.abs(diff) / 10);
             description = `Price ${diff.toFixed(2)}% above SMA`;
@@ -427,8 +427,8 @@ function generateSignals(prices, volumes, currentPrice) {
         }
 
         indicators.push({
-            name: 'Price vs SMA',
-            value: sma50.toFixed(2),
+            name: 'Price vs SMA (30)',
+            value: sma30.toFixed(2),
             signal,
             description,
         });
