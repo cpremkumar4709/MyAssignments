@@ -3,31 +3,31 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Market Signal Dashboard - Buy &amp; Sell Signals</title>
+    <title>Indian Market Signal Dashboard - Nifty 50, Bank Nifty &amp; Sensex</title>
     <link rel="stylesheet" href="styles.css">
 </head>
 <body>
     <header>
-        <h1>📈 Market Signal Dashboard</h1>
-        <p class="subtitle">Real-Time Buy &amp; Sell Signals Based on Technical Analysis</p>
+        <h1>🇮🇳 Indian Market Signal Dashboard</h1>
+        <p class="subtitle">Real-Time Buy &amp; Sell Signals for Nifty 50, Bank Nifty &amp; Sensex</p>
     </header>
 
     <main>
         <!-- Symbol Selector -->
         <section class="symbol-selector">
-            <label for="market-select">Select Market:</label>
+            <label for="market-select">Select Index:</label>
             <select id="market-select">
-                <option value="bitcoin">Bitcoin (BTC/USD)</option>
-                <option value="ethereum">Ethereum (ETH/USD)</option>
-                <option value="solana">Solana (SOL/USD)</option>
-                <option value="cardano">Cardano (ADA/USD)</option>
-                <option value="ripple">Ripple (XRP/USD)</option>
-                <option value="dogecoin">Dogecoin (DOGE/USD)</option>
-                <option value="polkadot">Polkadot (DOT/USD)</option>
-                <option value="litecoin">Litecoin (LTC/USD)</option>
+                <option value="^NSEI">Nifty 50 (NSE)</option>
+                <option value="^NSEBANK">Bank Nifty (NSE)</option>
+                <option value="^BSESN">Sensex (BSE)</option>
             </select>
             <button id="refresh-btn" title="Refresh Data">🔄 Refresh</button>
             <span id="last-updated" class="last-updated"></span>
+        </section>
+
+        <!-- Market Status -->
+        <section id="market-status-section" class="market-status">
+            <span id="market-status" class="status-badge">Checking market status...</span>
         </section>
 
         <!-- Price Display -->
@@ -38,16 +38,16 @@
                 <span id="price-change" class="change"></span>
             </div>
             <div class="price-card">
-                <span class="label">24h High</span>
+                <span class="label">Day High</span>
                 <span id="high-price" class="price secondary">--</span>
             </div>
             <div class="price-card">
-                <span class="label">24h Low</span>
+                <span class="label">Day Low</span>
                 <span id="low-price" class="price secondary">--</span>
             </div>
             <div class="price-card">
-                <span class="label">24h Volume</span>
-                <span id="volume" class="price secondary">--</span>
+                <span class="label">Previous Close</span>
+                <span id="prev-close" class="price secondary">--</span>
             </div>
         </section>
 
@@ -103,12 +103,13 @@
         <section class="disclaimer">
             <p>⚠️ <strong>Disclaimer:</strong> This tool is for educational and informational purposes only.
             Trading signals are based on technical analysis indicators and do not guarantee future results.
-            Always do your own research before making any trading decisions. Past performance is not indicative of future results.</p>
+            Always do your own research (DYOR) before making any trading decisions. Past performance is not indicative of future results.
+            This is NOT SEBI-registered investment advice.</p>
         </section>
     </main>
 
     <footer>
-        <p>Market Signal Dashboard &copy; 2026 | Data from CoinGecko API | Not Financial Advice</p>
+        <p>Indian Market Signal Dashboard &copy; 2026 | Data from Yahoo Finance | Not Financial Advice</p>
     </footer>
 
     <script src="app.js"></script>

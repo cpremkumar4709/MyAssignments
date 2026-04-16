@@ -1,26 +1,40 @@
 /**
- * Market Signal Dashboard
- * Fetches live market data and calculates buy/sell signals
- * based on multiple technical analysis indicators.
+ * Indian Market Signal Dashboard
+ * Fetches live Nifty 50, Bank Nifty & Sensex data and calculates
+ * buy/sell signals based on multiple technical analysis indicators.
  */
 
 // ============================================
 // Configuration
 // ============================================
 const CONFIG = {
-    API_BASE: 'https://api.coingecko.com/api/v3',
-    REFRESH_INTERVAL_MS: 30000, // Auto-refresh every 30 seconds
-    PRICE_HISTORY_DAYS: 30,     // Days of historical data for analysis
+    REFRESH_INTERVAL_MS: 60000, // Auto-refresh every 60 seconds
+    PRICE_HISTORY_RANGE: '3mo', // 3 months of historical data
+    PRICE_HISTORY_INTERVAL: '1d', // Daily intervals
+    // CORS proxies to try (in order of preference)
+    CORS_PROXIES: [
+        'https://corsproxy.io/?url=',
+        'https://api.allorigins.win/raw?url=',
+    ],
+    YAHOO_CHART_BASE: 'https://query1.finance.yahoo.com/v8/finance/chart/',
+};
+
+// Index metadata for display
+const INDEX_INFO = {
+    '^NSEI': { name: 'Nifty 50', exchange: 'NSE', shortName: 'NIFTY' },
+    '^NSEBANK': { name: 'Bank Nifty', exchange: 'NSE', shortName: 'BANKNIFTY' },
+    '^BSESN': { name: 'Sensex', exchange: 'BSE', shortName: 'SENSEX' },
 };
 
 // ============================================
 // State
 // ============================================
 let state = {
-    currentSymbol: 'bitcoin',
+    currentSymbol: '^NSEI',
     priceHistory: [],
     currentData: null,
     autoRefreshTimer: null,
+    workingProxyIndex: 0,
 };
 
 // ============================================
@@ -30,11 +44,12 @@ const elements = {
     marketSelect: () => document.getElementById('market-select'),
     refreshBtn: () => document.getElementById('refresh-btn'),
     lastUpdated: () => document.getElementById('last-updated'),
+    marketStatus: () => document.getElementById('market-status'),
     currentPrice: () => document.getElementById('current-price'),
     priceChange: () => document.getElementById('price-change'),
     highPrice: () => document.getElementById('high-price'),
     lowPrice: () => document.getElementById('low-price'),
-    volume: () => document.getElementById('volume'),
+    prevClose: () => document.getElementById('prev-close'),
     signalContainer: () => document.getElementById('signal-container'),
     buyBtn: () => document.getElementById('buy-btn'),
     sellBtn: () => document.getElementById('sell-btn'),
@@ -50,27 +65,39 @@ const elements = {
 // ============================================
 
 /**
- * Fetch current market data for a given coin.
+ * Fetch chart data from Yahoo Finance via CORS proxy.
+ * Returns historical OHLCV data and current quote info.
  */
-async function fetchCurrentData(coinId) {
-    const url = `${CONFIG.API_BASE}/coins/${coinId}?localization=false&tickers=false&community_data=false&developer_data=false`;
-    const response = await fetch(url);
-    if (!response.ok) {
-        throw new Error(`API error: ${response.status}`);
-    }
-    return response.json();
-}
+async function fetchChartData(symbol, range, interval) {
+    const encodedSymbol = encodeURIComponent(symbol);
+    const yahooUrl = `${CONFIG.YAHOO_CHART_BASE}${encodedSymbol}?range=${range}&interval=${interval}&includePrePost=false`;
 
-/**
- * Fetch price history for technical analysis.
- */
-async function fetchPriceHistory(coinId, days) {
-    const url = `${CONFIG.API_BASE}/coins/${coinId}/market_chart?vs_currency=usd&days=${days}&interval=daily`;
-    const response = await fetch(url);
-    if (!response.ok) {
-        throw new Error(`API error: ${response.status}`);
+    // Try each CORS proxy in sequence
+    let lastError = null;
+    for (let i = 0; i < CONFIG.CORS_PROXIES.length; i++) {
+        const proxyIndex = (state.workingProxyIndex + i) % CONFIG.CORS_PROXIES.length;
+        const proxy = CONFIG.CORS_PROXIES[proxyIndex];
+        const url = proxy + encodeURIComponent(yahooUrl);
+
+        try {
+            const response = await fetch(url, {
+                headers: { 'Accept': 'application/json' },
+            });
+            if (!response.ok) {
+                throw new Error(`HTTP ${response.status}`);
+            }
+            const data = await response.json();
+            if (data.chart && data.chart.result && data.chart.result.length > 0) {
+                state.workingProxyIndex = proxyIndex;
+                return data.chart.result[0];
+            }
+            throw new Error('Invalid response structure');
+        } catch (err) {
+            lastError = err;
+        }
     }
-    return response.json();
+
+    throw new Error(`Failed to fetch data from all sources: ${lastError ? lastError.message : 'Unknown error'}`);
 }
 
 // ============================================
@@ -145,8 +172,6 @@ function calculateMACD(prices) {
 
     const macdLine = ema12 - ema26;
 
-    // Calculate signal line (9-period EMA of MACD values)
-    // Simplified: use the MACD line value directly
     const macdValues = [];
     const multiplier12 = 2 / 13;
     const multiplier26 = 2 / 27;
@@ -506,35 +531,78 @@ function generateSignals(prices, volumes, currentPrice) {
 // ============================================
 
 function formatPrice(price) {
-    if (price >= 1000) return `$${price.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
-    if (price >= 1) return `$${price.toFixed(4)}`;
-    return `$${price.toFixed(6)}`;
+    return '₹' + price.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 }
 
 function formatVolume(volume) {
-    if (volume >= 1e9) return `$${(volume / 1e9).toFixed(2)}B`;
-    if (volume >= 1e6) return `$${(volume / 1e6).toFixed(2)}M`;
-    if (volume >= 1e3) return `$${(volume / 1e3).toFixed(2)}K`;
-    return `$${volume.toFixed(2)}`;
+    if (volume >= 1e7) return `₹${(volume / 1e7).toFixed(2)} Cr`;
+    if (volume >= 1e5) return `₹${(volume / 1e5).toFixed(2)} L`;
+    if (volume >= 1e3) return `₹${(volume / 1e3).toFixed(2)} K`;
+    return `₹${volume.toFixed(2)}`;
 }
 
-function updatePriceDisplay(data) {
-    const price = data.market_data.current_price.usd;
-    const change24h = data.market_data.price_change_percentage_24h;
-    const high24h = data.market_data.high_24h.usd;
-    const low24h = data.market_data.low_24h.usd;
-    const totalVolume = data.market_data.total_volume.usd;
+/**
+ * Check if Indian market is currently open.
+ * NSE/BSE trading hours: 9:15 AM - 3:30 PM IST, Mon-Fri.
+ */
+function getMarketStatus() {
+    const now = new Date();
+    // Convert to IST (UTC+5:30)
+    const utcMs = now.getTime() + now.getTimezoneOffset() * 60000;
+    const istMs = utcMs + 5.5 * 3600000;
+    const ist = new Date(istMs);
 
-    elements.currentPrice().textContent = formatPrice(price);
+    const day = ist.getDay(); // 0=Sun, 6=Sat
+    const hours = ist.getHours();
+    const minutes = ist.getMinutes();
+    const timeInMinutes = hours * 60 + minutes;
+
+    const preOpenStart = 9 * 60;       // 9:00 AM
+    const marketOpen = 9 * 60 + 15;    // 9:15 AM
+    const marketClose = 15 * 60 + 30;  // 3:30 PM
+
+    if (day === 0 || day === 6) {
+        return { status: 'closed', text: '🔴 Market Closed (Weekend)' };
+    }
+
+    if (timeInMinutes >= preOpenStart && timeInMinutes < marketOpen) {
+        return { status: 'pre-open', text: '🟡 Pre-Open Session (9:00 - 9:15 AM IST)' };
+    }
+
+    if (timeInMinutes >= marketOpen && timeInMinutes < marketClose) {
+        return { status: 'open', text: '🟢 Market Open (9:15 AM - 3:30 PM IST)' };
+    }
+
+    return { status: 'closed', text: '🔴 Market Closed' };
+}
+
+function updateMarketStatus() {
+    const { status, text } = getMarketStatus();
+    const badge = elements.marketStatus();
+    badge.textContent = text;
+    badge.className = `status-badge ${status}`;
+}
+
+function updatePriceDisplay(meta, quote) {
+    const currentPrice = meta.regularMarketPrice;
+    const previousClose = meta.previousClose || meta.chartPreviousClose;
+    const change = currentPrice - previousClose;
+    const changePercent = previousClose > 0 ? (change / previousClose) * 100 : 0;
+
+    elements.currentPrice().textContent = formatPrice(currentPrice);
 
     const changeEl = elements.priceChange();
-    const changeSign = change24h >= 0 ? '+' : '';
-    changeEl.textContent = `${changeSign}${change24h.toFixed(2)}% (24h)`;
-    changeEl.className = `change ${change24h >= 0 ? 'positive' : 'negative'}`;
+    const changeSign = change >= 0 ? '+' : '';
+    changeEl.textContent = `${changeSign}${change.toFixed(2)} (${changeSign}${changePercent.toFixed(2)}%)`;
+    changeEl.className = `change ${change >= 0 ? 'positive' : 'negative'}`;
 
-    elements.highPrice().textContent = formatPrice(high24h);
-    elements.lowPrice().textContent = formatPrice(low24h);
-    elements.volume().textContent = formatVolume(totalVolume);
+    // Day high/low from quote data
+    const dayHigh = quote.high ? quote.high[quote.high.length - 1] : currentPrice;
+    const dayLow = quote.low ? quote.low[quote.low.length - 1] : currentPrice;
+
+    elements.highPrice().textContent = formatPrice(dayHigh || currentPrice);
+    elements.lowPrice().textContent = formatPrice(dayLow || currentPrice);
+    elements.prevClose().textContent = formatPrice(previousClose);
 }
 
 function updateSignalDisplay(signals) {
@@ -630,32 +698,44 @@ function showError(message) {
 // ============================================
 
 async function loadMarketData() {
-    const coinId = state.currentSymbol;
+    const symbol = state.currentSymbol;
+    const indexInfo = INDEX_INFO[symbol];
 
     try {
         elements.refreshBtn().textContent = '⏳ Loading...';
         elements.refreshBtn().disabled = true;
 
-        // Fetch current data and price history in parallel
-        const [currentData, historyData] = await Promise.all([
-            fetchCurrentData(coinId),
-            fetchPriceHistory(coinId, CONFIG.PRICE_HISTORY_DAYS),
-        ]);
+        // Update market status
+        updateMarketStatus();
 
-        state.currentData = currentData;
+        // Fetch chart data (includes current price + history)
+        const chartResult = await fetchChartData(
+            symbol,
+            CONFIG.PRICE_HISTORY_RANGE,
+            CONFIG.PRICE_HISTORY_INTERVAL
+        );
 
-        // Extract prices and volumes from history
-        const prices = historyData.prices.map(p => p[1]);
-        const volumes = historyData.total_volumes.map(v => v[1]);
-        state.priceHistory = prices;
+        const meta = chartResult.meta;
+        const quote = chartResult.indicators.quote[0];
 
-        const currentPrice = currentData.market_data.current_price.usd;
+        // Extract close prices (filter out null values)
+        const closePrices = (quote.close || []).filter(p => p !== null && p !== undefined);
+        const volumes = (quote.volume || []).filter(v => v !== null && v !== undefined);
+
+        if (closePrices.length < 2) {
+            throw new Error('Insufficient price data received');
+        }
+
+        state.priceHistory = closePrices;
+        state.currentData = { meta, quote, indexInfo };
+
+        const currentPrice = meta.regularMarketPrice;
 
         // Update price display
-        updatePriceDisplay(currentData);
+        updatePriceDisplay(meta, quote);
 
-        // Generate signals
-        const signals = generateSignals(prices, volumes, currentPrice);
+        // Generate signals from historical close prices
+        const signals = generateSignals(closePrices, volumes, currentPrice);
 
         // Update all UI components
         updateSignalDisplay(signals);
@@ -669,7 +749,7 @@ async function loadMarketData() {
 
     } catch (error) {
         console.error('Error loading market data:', error);
-        showError(`Failed to load data: ${error.message}`);
+        showError(`Failed to load ${indexInfo.name} data: ${error.message}`);
     } finally {
         elements.refreshBtn().textContent = '🔄 Refresh';
         elements.refreshBtn().disabled = false;
@@ -700,16 +780,16 @@ function setupEventListeners() {
     // Buy/Sell button click handlers - show alert with trade info
     elements.buyBtn().addEventListener('click', () => {
         if (!state.currentData) return;
-        const price = state.currentData.market_data.current_price.usd;
-        const name = state.currentData.name;
-        alert(`🟢 BUY Signal for ${name}\nCurrent Price: ${formatPrice(price)}\n\n⚠️ This is not financial advice. Always do your own research.`);
+        const price = state.currentData.meta.regularMarketPrice;
+        const name = state.currentData.indexInfo.name;
+        alert(`🟢 BUY Signal for ${name}\nCurrent Level: ${formatPrice(price)}\n\n⚠️ This is not SEBI-registered investment advice. Always do your own research.`);
     });
 
     elements.sellBtn().addEventListener('click', () => {
         if (!state.currentData) return;
-        const price = state.currentData.market_data.current_price.usd;
-        const name = state.currentData.name;
-        alert(`🔴 SELL Signal for ${name}\nCurrent Price: ${formatPrice(price)}\n\n⚠️ This is not financial advice. Always do your own research.`);
+        const price = state.currentData.meta.regularMarketPrice;
+        const name = state.currentData.indexInfo.name;
+        alert(`🔴 SELL Signal for ${name}\nCurrent Level: ${formatPrice(price)}\n\n⚠️ This is not SEBI-registered investment advice. Always do your own research.`);
     });
 }
 
@@ -719,6 +799,7 @@ function setupEventListeners() {
 
 document.addEventListener('DOMContentLoaded', () => {
     setupEventListeners();
+    updateMarketStatus();
     loadMarketData();
     startAutoRefresh();
 });
