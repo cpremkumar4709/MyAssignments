@@ -1,0 +1,116 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Market Signal Dashboard - Buy &amp; Sell Signals</title>
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <header>
+        <h1>📈 Market Signal Dashboard</h1>
+        <p class="subtitle">Real-Time Buy &amp; Sell Signals Based on Technical Analysis</p>
+    </header>
+
+    <main>
+        <!-- Symbol Selector -->
+        <section class="symbol-selector">
+            <label for="market-select">Select Market:</label>
+            <select id="market-select">
+                <option value="bitcoin">Bitcoin (BTC/USD)</option>
+                <option value="ethereum">Ethereum (ETH/USD)</option>
+                <option value="solana">Solana (SOL/USD)</option>
+                <option value="cardano">Cardano (ADA/USD)</option>
+                <option value="ripple">Ripple (XRP/USD)</option>
+                <option value="dogecoin">Dogecoin (DOGE/USD)</option>
+                <option value="polkadot">Polkadot (DOT/USD)</option>
+                <option value="litecoin">Litecoin (LTC/USD)</option>
+            </select>
+            <button id="refresh-btn" title="Refresh Data">🔄 Refresh</button>
+            <span id="last-updated" class="last-updated"></span>
+        </section>
+
+        <!-- Price Display -->
+        <section class="price-section">
+            <div class="price-card">
+                <span class="label">Current Price</span>
+                <span id="current-price" class="price">Loading...</span>
+                <span id="price-change" class="change"></span>
+            </div>
+            <div class="price-card">
+                <span class="label">24h High</span>
+                <span id="high-price" class="price secondary">--</span>
+            </div>
+            <div class="price-card">
+                <span class="label">24h Low</span>
+                <span id="low-price" class="price secondary">--</span>
+            </div>
+            <div class="price-card">
+                <span class="label">24h Volume</span>
+                <span id="volume" class="price secondary">--</span>
+            </div>
+        </section>
+
+        <!-- Signal Display -->
+        <section class="signal-section">
+            <div id="signal-container" class="signal-container">
+                <div class="signal-loading">Analyzing market data...</div>
+            </div>
+        </section>
+
+        <!-- Buy / Sell Buttons -->
+        <section class="action-section">
+            <button id="buy-btn" class="action-btn buy-btn" disabled>
+                <span class="btn-icon">🟢</span>
+                <span class="btn-label">BUY</span>
+                <span id="buy-confidence" class="btn-confidence">--</span>
+            </button>
+            <button id="sell-btn" class="action-btn sell-btn" disabled>
+                <span class="btn-icon">🔴</span>
+                <span class="btn-label">SELL</span>
+                <span id="sell-confidence" class="btn-confidence">--</span>
+            </button>
+        </section>
+
+        <!-- Technical Indicators -->
+        <section class="indicators-section">
+            <h2>Technical Indicators</h2>
+            <div id="indicators-grid" class="indicators-grid">
+                <div class="indicator-card loading">
+                    <span>Loading indicators...</span>
+                </div>
+            </div>
+        </section>
+
+        <!-- Signal Strength Meter -->
+        <section class="meter-section">
+            <h2>Overall Signal Strength</h2>
+            <div class="meter-container">
+                <div class="meter-labels">
+                    <span class="sell-label">Strong Sell</span>
+                    <span class="neutral-label">Neutral</span>
+                    <span class="buy-label">Strong Buy</span>
+                </div>
+                <div class="meter-bar">
+                    <div id="meter-fill" class="meter-fill" style="width: 50%;"></div>
+                    <div id="meter-needle" class="meter-needle" style="left: 50%;"></div>
+                </div>
+                <div id="meter-value" class="meter-value">Analyzing...</div>
+            </div>
+        </section>
+
+        <!-- Disclaimer -->
+        <section class="disclaimer">
+            <p>⚠️ <strong>Disclaimer:</strong> This tool is for educational and informational purposes only.
+            Trading signals are based on technical analysis indicators and do not guarantee future results.
+            Always do your own research before making any trading decisions. Past performance is not indicative of future results.</p>
+        </section>
+    </main>
+
+    <footer>
+        <p>Market Signal Dashboard &copy; 2026 | Data from CoinGecko API | Not Financial Advice</p>
+    </footer>
+
+    <script src="app.js"></script>
+</body>
+</html>

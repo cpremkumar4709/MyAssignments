@@ -1,0 +1,546 @@
+/* ============================================
+   Market Signal Dashboard - Styles
+   ============================================ */
+
+:root {
+    --bg-primary: #0d1117;
+    --bg-secondary: #161b22;
+    --bg-card: #1c2128;
+    --border-color: #30363d;
+    --text-primary: #e6edf3;
+    --text-secondary: #8b949e;
+    --green: #2ea043;
+    --green-light: #3fb950;
+    --green-bg: rgba(46, 160, 67, 0.15);
+    --red: #da3633;
+    --red-light: #f85149;
+    --red-bg: rgba(218, 54, 51, 0.15);
+    --yellow: #d29922;
+    --yellow-bg: rgba(210, 153, 34, 0.15);
+    --blue: #58a6ff;
+    --blue-bg: rgba(88, 166, 255, 0.15);
+    --font-main: 'Segoe UI', -apple-system, BlinkMacSystemFont, sans-serif;
+    --font-mono: 'Cascadia Code', 'Fira Code', monospace;
+    --radius: 8px;
+    --shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
+}
+
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+body {
+    font-family: var(--font-main);
+    background: var(--bg-primary);
+    color: var(--text-primary);
+    min-height: 100vh;
+    line-height: 1.6;
+}
+
+/* Header */
+header {
+    text-align: center;
+    padding: 2rem 1rem 1rem;
+    background: var(--bg-secondary);
+    border-bottom: 1px solid var(--border-color);
+}
+
+header h1 {
+    font-size: 2rem;
+    font-weight: 700;
+    margin-bottom: 0.25rem;
+}
+
+.subtitle {
+    color: var(--text-secondary);
+    font-size: 0.95rem;
+}
+
+/* Main */
+main {
+    max-width: 1000px;
+    margin: 0 auto;
+    padding: 1.5rem 1rem;
+}
+
+/* Symbol Selector */
+.symbol-selector {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    flex-wrap: wrap;
+    margin-bottom: 1.5rem;
+}
+
+.symbol-selector label {
+    font-weight: 600;
+    color: var(--text-secondary);
+}
+
+.symbol-selector select {
+    background: var(--bg-card);
+    color: var(--text-primary);
+    border: 1px solid var(--border-color);
+    padding: 0.5rem 1rem;
+    border-radius: var(--radius);
+    font-size: 0.95rem;
+    cursor: pointer;
+    outline: none;
+}
+
+.symbol-selector select:focus {
+    border-color: var(--blue);
+}
+
+#refresh-btn {
+    background: var(--bg-card);
+    color: var(--text-primary);
+    border: 1px solid var(--border-color);
+    padding: 0.5rem 1rem;
+    border-radius: var(--radius);
+    cursor: pointer;
+    font-size: 0.9rem;
+    transition: background 0.2s;
+}
+
+#refresh-btn:hover {
+    background: var(--border-color);
+}
+
+.last-updated {
+    color: var(--text-secondary);
+    font-size: 0.8rem;
+    margin-left: auto;
+}
+
+/* Price Section */
+.price-section {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 1rem;
+    margin-bottom: 1.5rem;
+}
+
+.price-card {
+    background: var(--bg-card);
+    border: 1px solid var(--border-color);
+    border-radius: var(--radius);
+    padding: 1.25rem;
+    display: flex;
+    flex-direction: column;
+    gap: 0.25rem;
+    box-shadow: var(--shadow);
+}
+
+.price-card .label {
+    color: var(--text-secondary);
+    font-size: 0.8rem;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.price-card .price {
+    font-size: 1.5rem;
+    font-weight: 700;
+    font-family: var(--font-mono);
+}
+
+.price-card .price.secondary {
+    font-size: 1.2rem;
+    color: var(--text-secondary);
+}
+
+.price-card .change {
+    font-size: 0.9rem;
+    font-weight: 600;
+}
+
+.change.positive {
+    color: var(--green-light);
+}
+
+.change.negative {
+    color: var(--red-light);
+}
+
+/* Signal Section */
+.signal-section {
+    margin-bottom: 1.5rem;
+}
+
+.signal-container {
+    background: var(--bg-card);
+    border: 2px solid var(--border-color);
+    border-radius: var(--radius);
+    padding: 2rem;
+    text-align: center;
+    box-shadow: var(--shadow);
+    transition: border-color 0.3s;
+}
+
+.signal-container.buy-signal {
+    border-color: var(--green);
+    background: var(--green-bg);
+}
+
+.signal-container.sell-signal {
+    border-color: var(--red);
+    background: var(--red-bg);
+}
+
+.signal-container.neutral-signal {
+    border-color: var(--yellow);
+    background: var(--yellow-bg);
+}
+
+.signal-text {
+    font-size: 1.8rem;
+    font-weight: 800;
+    margin-bottom: 0.5rem;
+}
+
+.signal-text.buy {
+    color: var(--green-light);
+}
+
+.signal-text.sell {
+    color: var(--red-light);
+}
+
+.signal-text.neutral {
+    color: var(--yellow);
+}
+
+.signal-confidence {
+    font-size: 3rem;
+    font-weight: 900;
+    font-family: var(--font-mono);
+}
+
+.signal-confidence.buy {
+    color: var(--green-light);
+}
+
+.signal-confidence.sell {
+    color: var(--red-light);
+}
+
+.signal-confidence.neutral {
+    color: var(--yellow);
+}
+
+.signal-description {
+    color: var(--text-secondary);
+    font-size: 0.9rem;
+    margin-top: 0.5rem;
+}
+
+.signal-loading {
+    color: var(--text-secondary);
+    font-size: 1rem;
+    padding: 1rem;
+}
+
+/* Action Buttons */
+.action-section {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 1rem;
+    margin-bottom: 1.5rem;
+}
+
+.action-btn {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 0.25rem;
+    padding: 1.5rem;
+    border: 2px solid;
+    border-radius: var(--radius);
+    cursor: pointer;
+    transition: all 0.3s ease;
+    font-family: var(--font-main);
+    box-shadow: var(--shadow);
+}
+
+.action-btn:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+
+.buy-btn {
+    background: var(--green-bg);
+    border-color: var(--green);
+    color: var(--green-light);
+}
+
+.buy-btn:not(:disabled):hover {
+    background: var(--green);
+    color: #fff;
+    transform: translateY(-2px);
+    box-shadow: 0 4px 16px rgba(46, 160, 67, 0.4);
+}
+
+.buy-btn.active {
+    background: var(--green);
+    color: #fff;
+    animation: pulse-green 1.5s infinite;
+}
+
+.sell-btn {
+    background: var(--red-bg);
+    border-color: var(--red);
+    color: var(--red-light);
+}
+
+.sell-btn:not(:disabled):hover {
+    background: var(--red);
+    color: #fff;
+    transform: translateY(-2px);
+    box-shadow: 0 4px 16px rgba(218, 54, 51, 0.4);
+}
+
+.sell-btn.active {
+    background: var(--red);
+    color: #fff;
+    animation: pulse-red 1.5s infinite;
+}
+
+.btn-icon {
+    font-size: 1.5rem;
+}
+
+.btn-label {
+    font-size: 1.4rem;
+    font-weight: 800;
+    letter-spacing: 2px;
+}
+
+.btn-confidence {
+    font-size: 1.1rem;
+    font-weight: 600;
+    font-family: var(--font-mono);
+}
+
+@keyframes pulse-green {
+    0%, 100% { box-shadow: 0 0 0 0 rgba(46, 160, 67, 0.4); }
+    50% { box-shadow: 0 0 20px 4px rgba(46, 160, 67, 0.3); }
+}
+
+@keyframes pulse-red {
+    0%, 100% { box-shadow: 0 0 0 0 rgba(218, 54, 51, 0.4); }
+    50% { box-shadow: 0 0 20px 4px rgba(218, 54, 51, 0.3); }
+}
+
+/* Indicators Grid */
+.indicators-section {
+    margin-bottom: 1.5rem;
+}
+
+.indicators-section h2,
+.meter-section h2 {
+    font-size: 1.1rem;
+    color: var(--text-secondary);
+    margin-bottom: 1rem;
+    padding-bottom: 0.5rem;
+    border-bottom: 1px solid var(--border-color);
+}
+
+.indicators-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+    gap: 0.75rem;
+}
+
+.indicator-card {
+    background: var(--bg-card);
+    border: 1px solid var(--border-color);
+    border-radius: var(--radius);
+    padding: 1rem 1.25rem;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    box-shadow: var(--shadow);
+}
+
+.indicator-card.loading {
+    justify-content: center;
+    color: var(--text-secondary);
+}
+
+.indicator-name {
+    font-weight: 600;
+    font-size: 0.9rem;
+}
+
+.indicator-value {
+    font-family: var(--font-mono);
+    font-size: 0.85rem;
+    color: var(--text-secondary);
+}
+
+.indicator-signal {
+    padding: 0.2rem 0.6rem;
+    border-radius: 4px;
+    font-size: 0.75rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.indicator-signal.buy {
+    background: var(--green-bg);
+    color: var(--green-light);
+    border: 1px solid var(--green);
+}
+
+.indicator-signal.sell {
+    background: var(--red-bg);
+    color: var(--red-light);
+    border: 1px solid var(--red);
+}
+
+.indicator-signal.neutral {
+    background: var(--yellow-bg);
+    color: var(--yellow);
+    border: 1px solid var(--yellow);
+}
+
+.indicator-info {
+    display: flex;
+    flex-direction: column;
+    gap: 0.15rem;
+}
+
+.indicator-details {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+}
+
+/* Signal Strength Meter */
+.meter-section {
+    margin-bottom: 1.5rem;
+}
+
+.meter-container {
+    background: var(--bg-card);
+    border: 1px solid var(--border-color);
+    border-radius: var(--radius);
+    padding: 1.5rem;
+    box-shadow: var(--shadow);
+}
+
+.meter-labels {
+    display: flex;
+    justify-content: space-between;
+    font-size: 0.8rem;
+    color: var(--text-secondary);
+    margin-bottom: 0.5rem;
+}
+
+.sell-label { color: var(--red-light); }
+.neutral-label { color: var(--yellow); }
+.buy-label { color: var(--green-light); }
+
+.meter-bar {
+    position: relative;
+    height: 12px;
+    background: linear-gradient(to right, var(--red), var(--yellow) 50%, var(--green));
+    border-radius: 6px;
+    overflow: visible;
+    margin-bottom: 0.75rem;
+}
+
+.meter-fill {
+    display: none;
+}
+
+.meter-needle {
+    position: absolute;
+    top: -4px;
+    width: 4px;
+    height: 20px;
+    background: #fff;
+    border-radius: 2px;
+    transform: translateX(-50%);
+    transition: left 0.5s ease;
+    box-shadow: 0 0 6px rgba(255, 255, 255, 0.5);
+}
+
+.meter-value {
+    text-align: center;
+    font-size: 1rem;
+    font-weight: 700;
+    color: var(--text-primary);
+}
+
+/* Disclaimer */
+.disclaimer {
+    background: var(--bg-card);
+    border: 1px solid var(--yellow);
+    border-radius: var(--radius);
+    padding: 1rem 1.25rem;
+    margin-bottom: 1rem;
+}
+
+.disclaimer p {
+    font-size: 0.8rem;
+    color: var(--text-secondary);
+    line-height: 1.5;
+}
+
+/* Footer */
+footer {
+    text-align: center;
+    padding: 1.5rem;
+    color: var(--text-secondary);
+    font-size: 0.8rem;
+    border-top: 1px solid var(--border-color);
+}
+
+/* Responsive */
+@media (max-width: 600px) {
+    header h1 {
+        font-size: 1.4rem;
+    }
+
+    .price-section {
+        grid-template-columns: 1fr 1fr;
+    }
+
+    .action-section {
+        grid-template-columns: 1fr 1fr;
+    }
+
+    .action-btn {
+        padding: 1rem;
+    }
+
+    .btn-label {
+        font-size: 1.1rem;
+    }
+
+    .signal-text {
+        font-size: 1.3rem;
+    }
+
+    .signal-confidence {
+        font-size: 2rem;
+    }
+
+    .indicators-grid {
+        grid-template-columns: 1fr;
+    }
+
+    .symbol-selector {
+        flex-direction: column;
+        align-items: flex-start;
+    }
+
+    .last-updated {
+        margin-left: 0;
+    }
+}
