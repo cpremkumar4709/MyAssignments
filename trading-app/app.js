@@ -607,6 +607,28 @@ function updateMarketStatus() {
     badge.className = `status-badge ${status}`;
 }
 
+/**
+ * Extract day high from quote candle data.
+ */
+function extractDayHigh(quote, fallback) {
+    if (quote.high) {
+        const vals = quote.high.filter(v => v !== null && v !== undefined);
+        if (vals.length > 0) return Math.max(...vals);
+    }
+    return fallback;
+}
+
+/**
+ * Extract day low from quote candle data.
+ */
+function extractDayLow(quote, fallback) {
+    if (quote.low) {
+        const vals = quote.low.filter(v => v !== null && v !== undefined);
+        if (vals.length > 0) return Math.min(...vals);
+    }
+    return fallback;
+}
+
 function updatePriceDisplay(meta, quote) {
     const currentPrice = meta.regularMarketPrice;
     const previousClose = meta.previousClose || meta.chartPreviousClose;
@@ -631,12 +653,8 @@ function updatePriceDisplay(meta, quote) {
     changeEl.textContent = `${changeSign}${change.toFixed(2)} (${changeSign}${changePercent.toFixed(2)}%)`;
     changeEl.className = `change ${change >= 0 ? 'positive' : 'negative'}`;
 
-    // Day high/low from quote data
-    const dayHigh = quote.high ? quote.high[quote.high.length - 1] : currentPrice;
-    const dayLow = quote.low ? quote.low[quote.low.length - 1] : currentPrice;
-
-    elements.highPrice().textContent = formatPrice(dayHigh || currentPrice);
-    elements.lowPrice().textContent = formatPrice(dayLow || currentPrice);
+    elements.highPrice().textContent = formatPrice(extractDayHigh(quote, currentPrice));
+    elements.lowPrice().textContent = formatPrice(extractDayLow(quote, currentPrice));
     elements.prevClose().textContent = formatPrice(previousClose);
 }
 
@@ -668,17 +686,8 @@ function updateLivePriceOnly(meta, quote) {
     changeEl.className = `change ${change >= 0 ? 'positive' : 'negative'}`;
 
     // Update day high/low from the latest 1-minute candles
-    if (quote.high && quote.low) {
-        const highs = quote.high.filter(h => h !== null);
-        const lows = quote.low.filter(l => l !== null);
-        if (highs.length > 0) {
-            elements.highPrice().textContent = formatPrice(Math.max(...highs));
-        }
-        if (lows.length > 0) {
-            elements.lowPrice().textContent = formatPrice(Math.min(...lows));
-        }
-    }
-
+    elements.highPrice().textContent = formatPrice(extractDayHigh(quote, currentPrice));
+    elements.lowPrice().textContent = formatPrice(extractDayLow(quote, currentPrice));
     elements.prevClose().textContent = formatPrice(previousClose);
 
     // Update stored current data meta for button clicks
@@ -795,8 +804,11 @@ function updateLiveTimerDisplay() {
         timerEl.textContent = 'Updated just now';
     } else if (elapsed === 1) {
         timerEl.textContent = '1 second ago';
-    } else {
+    } else if (elapsed < 60) {
         timerEl.textContent = `${elapsed} seconds ago`;
+    } else {
+        const minutes = Math.floor(elapsed / 60);
+        timerEl.textContent = `${minutes} minute${minutes > 1 ? 's' : ''} ago`;
     }
 }
 
