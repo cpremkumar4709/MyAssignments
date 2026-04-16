@@ -27,9 +27,18 @@ A live **Buy & Sell Signal** web application for Indian stock market indices —
 - **Responsive Design** — Works on desktop and mobile
 - **Dark Theme** — Professional trading-style UI
 
+### 🚀 Quick Start (One Command — Auto-Opens Browser)
+
+```bash
+cd trading-app
+npm start
+```
+
+This starts a local server on `http://localhost:8080` and **automatically opens the dashboard in your browser** — no manual steps needed. Requires [Node.js](https://nodejs.org/) to be installed.
+
 ### How to Use
 
-1. Open `trading-app/index.html` in any modern web browser
+1. The dashboard opens automatically at `http://localhost:8080`
 2. Select an index from the dropdown (Nifty 50, Bank Nifty, or Sensex)
 3. View the buy/sell signal and confidence percentage
 4. Check individual technical indicators for detailed analysis
