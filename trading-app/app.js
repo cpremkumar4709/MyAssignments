@@ -2,15 +2,22 @@
  * Indian Market Signal Dashboard
  * Fetches live Nifty 50, Bank Nifty & Sensex data and calculates
  * buy/sell signals based on multiple technical analysis indicators.
+ *
+ * Dual-refresh strategy:
+ *   - Live price: fetched every 1 second (lightweight 1d/1m chart)
+ *   - Full analysis: fetched every 30 seconds (3-month daily data)
  */
 
 // ============================================
 // Configuration
 // ============================================
 const CONFIG = {
-    REFRESH_INTERVAL_MS: 60000, // Auto-refresh every 60 seconds
-    PRICE_HISTORY_RANGE: '3mo', // 3 months of historical data
-    PRICE_HISTORY_INTERVAL: '1d', // Daily intervals
+    LIVE_REFRESH_MS: 1000,           // Live price every 1 second
+    FULL_REFRESH_MS: 30000,          // Full analysis every 30 seconds
+    PRICE_HISTORY_RANGE: '3mo',      // 3 months of historical data for indicators
+    PRICE_HISTORY_INTERVAL: '1d',    // Daily intervals for indicators
+    LIVE_RANGE: '1d',                // 1-day range for live price
+    LIVE_INTERVAL: '1m',             // 1-minute candles for near-real-time price
     // CORS proxies to try (in order of preference)
     CORS_PROXIES: [
         'https://corsproxy.io/?url=',
@@ -33,8 +40,15 @@ let state = {
     currentSymbol: '^NSEI',
     priceHistory: [],
     currentData: null,
+    lastPrice: null,
+    lastLiveUpdate: null,
     autoRefreshTimer: null,
+    liveTickerTimer: null,
+    liveTimerInterval: null,
+    isFetchingLive: false,
+    isFetchingFull: false,
     workingProxyIndex: 0,
+    liveErrorCount: 0,
 };
 
 // ============================================
@@ -45,6 +59,8 @@ const elements = {
     refreshBtn: () => document.getElementById('refresh-btn'),
     lastUpdated: () => document.getElementById('last-updated'),
     marketStatus: () => document.getElementById('market-status'),
+    liveIndicator: () => document.getElementById('live-indicator'),
+    liveTimer: () => document.getElementById('live-timer'),
     currentPrice: () => document.getElementById('current-price'),
     priceChange: () => document.getElementById('price-change'),
     highPrice: () => document.getElementById('high-price'),
@@ -98,6 +114,14 @@ async function fetchChartData(symbol, range, interval) {
     }
 
     throw new Error(`Failed to fetch data from all sources: ${lastError ? lastError.message : 'Unknown error'}`);
+}
+
+/**
+ * Fetch only live price (lightweight 1d/1m chart).
+ * Returns just the meta with regularMarketPrice and latest candle data.
+ */
+async function fetchLivePrice(symbol) {
+    return fetchChartData(symbol, CONFIG.LIVE_RANGE, CONFIG.LIVE_INTERVAL);
 }
 
 // ============================================
@@ -589,7 +613,18 @@ function updatePriceDisplay(meta, quote) {
     const change = currentPrice - previousClose;
     const changePercent = previousClose > 0 ? (change / previousClose) * 100 : 0;
 
-    elements.currentPrice().textContent = formatPrice(currentPrice);
+    // Price flash animation on change
+    const priceEl = elements.currentPrice();
+    const oldPrice = state.lastPrice;
+    priceEl.textContent = formatPrice(currentPrice);
+
+    if (oldPrice !== null && currentPrice !== oldPrice) {
+        priceEl.classList.remove('price-flash-up', 'price-flash-down');
+        // Force reflow to restart animation
+        void priceEl.offsetWidth;
+        priceEl.classList.add(currentPrice > oldPrice ? 'price-flash-up' : 'price-flash-down');
+    }
+    state.lastPrice = currentPrice;
 
     const changeEl = elements.priceChange();
     const changeSign = change >= 0 ? '+' : '';
@@ -603,6 +638,58 @@ function updatePriceDisplay(meta, quote) {
     elements.highPrice().textContent = formatPrice(dayHigh || currentPrice);
     elements.lowPrice().textContent = formatPrice(dayLow || currentPrice);
     elements.prevClose().textContent = formatPrice(previousClose);
+}
+
+/**
+ * Lightweight live-price-only update.
+ * Updates price card, change %, and day high/low without regenerating signals.
+ */
+function updateLivePriceOnly(meta, quote) {
+    const currentPrice = meta.regularMarketPrice;
+    const previousClose = meta.previousClose || meta.chartPreviousClose;
+    const change = currentPrice - previousClose;
+    const changePercent = previousClose > 0 ? (change / previousClose) * 100 : 0;
+
+    // Price flash animation on change
+    const priceEl = elements.currentPrice();
+    const oldPrice = state.lastPrice;
+    priceEl.textContent = formatPrice(currentPrice);
+
+    if (oldPrice !== null && currentPrice !== oldPrice) {
+        priceEl.classList.remove('price-flash-up', 'price-flash-down');
+        void priceEl.offsetWidth;
+        priceEl.classList.add(currentPrice > oldPrice ? 'price-flash-up' : 'price-flash-down');
+    }
+    state.lastPrice = currentPrice;
+
+    const changeEl = elements.priceChange();
+    const changeSign = change >= 0 ? '+' : '';
+    changeEl.textContent = `${changeSign}${change.toFixed(2)} (${changeSign}${changePercent.toFixed(2)}%)`;
+    changeEl.className = `change ${change >= 0 ? 'positive' : 'negative'}`;
+
+    // Update day high/low from the latest 1-minute candles
+    if (quote.high && quote.low) {
+        const highs = quote.high.filter(h => h !== null);
+        const lows = quote.low.filter(l => l !== null);
+        if (highs.length > 0) {
+            elements.highPrice().textContent = formatPrice(Math.max(...highs));
+        }
+        if (lows.length > 0) {
+            elements.lowPrice().textContent = formatPrice(Math.min(...lows));
+        }
+    }
+
+    elements.prevClose().textContent = formatPrice(previousClose);
+
+    // Update stored current data meta for button clicks
+    if (state.currentData) {
+        state.currentData.meta = meta;
+        state.currentData.quote = quote;
+    }
+
+    // Update live timer
+    state.lastLiveUpdate = Date.now();
+    updateLiveTimerDisplay();
 }
 
 function updateSignalDisplay(signals) {
@@ -694,10 +781,37 @@ function showError(message) {
 }
 
 // ============================================
+// Live Timer Display
+// ============================================
+
+function updateLiveTimerDisplay() {
+    const timerEl = elements.liveTimer();
+    if (!state.lastLiveUpdate) {
+        timerEl.textContent = 'Waiting for data...';
+        return;
+    }
+    const elapsed = Math.floor((Date.now() - state.lastLiveUpdate) / 1000);
+    if (elapsed < 1) {
+        timerEl.textContent = 'Updated just now';
+    } else if (elapsed === 1) {
+        timerEl.textContent = '1 second ago';
+    } else {
+        timerEl.textContent = `${elapsed} seconds ago`;
+    }
+}
+
+// ============================================
 // Main Data Flow
 // ============================================
 
+/**
+ * Full market data load — fetches 3-month history, recalculates all
+ * technical indicators, and regenerates signals.
+ */
 async function loadMarketData() {
+    if (state.isFetchingFull) return;
+    state.isFetchingFull = true;
+
     const symbol = state.currentSymbol;
     const indexInfo = INDEX_INFO[symbol];
 
@@ -744,8 +858,17 @@ async function loadMarketData() {
         updateMeter(signals);
 
         // Update timestamp
+        state.lastLiveUpdate = Date.now();
         const now = new Date();
-        elements.lastUpdated().textContent = `Last updated: ${now.toLocaleTimeString()}`;
+        elements.lastUpdated().textContent = `Full analysis: ${now.toLocaleTimeString()}`;
+
+        // Mark live indicator as active
+        const liveEl = elements.liveIndicator();
+        liveEl.textContent = '🟢 LIVE';
+        liveEl.classList.add('active');
+
+        // Reset error counter on success
+        state.liveErrorCount = 0;
 
     } catch (error) {
         console.error('Error loading market data:', error);
@@ -753,14 +876,85 @@ async function loadMarketData() {
     } finally {
         elements.refreshBtn().textContent = '🔄 Refresh';
         elements.refreshBtn().disabled = false;
+        state.isFetchingFull = false;
     }
 }
 
-function startAutoRefresh() {
+/**
+ * Live price tick — lightweight fetch for near-real-time price update.
+ * Runs every 1 second. Skips if a fetch is already in progress.
+ */
+async function liveTickUpdate() {
+    // Skip if another live fetch or full fetch is running
+    if (state.isFetchingLive || state.isFetchingFull) return;
+    state.isFetchingLive = true;
+
+    const symbol = state.currentSymbol;
+
+    try {
+        const chartResult = await fetchLivePrice(symbol);
+        const meta = chartResult.meta;
+        const quote = chartResult.indicators.quote[0];
+
+        // Update only the price display (no signal regeneration)
+        updateLivePriceOnly(meta, quote);
+
+        // Update market status
+        updateMarketStatus();
+
+        // Reset error counter on success
+        state.liveErrorCount = 0;
+
+        // Mark live as active
+        const liveEl = elements.liveIndicator();
+        liveEl.textContent = '🟢 LIVE';
+        liveEl.classList.add('active');
+
+    } catch (error) {
+        state.liveErrorCount++;
+        console.warn(`Live tick error (${state.liveErrorCount}):`, error.message);
+
+        // After 5 consecutive errors, show degraded status
+        if (state.liveErrorCount >= 5) {
+            const liveEl = elements.liveIndicator();
+            liveEl.textContent = '🔴 DELAYED';
+            liveEl.classList.remove('active');
+        }
+    } finally {
+        state.isFetchingLive = false;
+    }
+}
+
+// ============================================
+// Timers
+// ============================================
+
+function startLiveTicker() {
+    stopLiveTicker();
+    // Immediate first tick
+    liveTickUpdate();
+    state.liveTickerTimer = setInterval(liveTickUpdate, CONFIG.LIVE_REFRESH_MS);
+}
+
+function stopLiveTicker() {
+    if (state.liveTickerTimer) {
+        clearInterval(state.liveTickerTimer);
+        state.liveTickerTimer = null;
+    }
+}
+
+function startFullRefresh() {
     if (state.autoRefreshTimer) {
         clearInterval(state.autoRefreshTimer);
     }
-    state.autoRefreshTimer = setInterval(loadMarketData, CONFIG.REFRESH_INTERVAL_MS);
+    state.autoRefreshTimer = setInterval(loadMarketData, CONFIG.FULL_REFRESH_MS);
+}
+
+function startLiveTimerDisplay() {
+    if (state.liveTimerInterval) {
+        clearInterval(state.liveTimerInterval);
+    }
+    state.liveTimerInterval = setInterval(updateLiveTimerDisplay, 1000);
 }
 
 // ============================================
@@ -770,10 +964,16 @@ function startAutoRefresh() {
 function setupEventListeners() {
     elements.marketSelect().addEventListener('change', (e) => {
         state.currentSymbol = e.target.value;
-        loadMarketData();
+        state.lastPrice = null;
+        state.liveErrorCount = 0;
+        // Full reload on symbol change, then resume live ticker
+        loadMarketData().then(() => {
+            startLiveTicker();
+        });
     });
 
     elements.refreshBtn().addEventListener('click', () => {
+        state.liveErrorCount = 0;
         loadMarketData();
     });
 
@@ -791,6 +991,17 @@ function setupEventListeners() {
         const name = state.currentData.indexInfo.name;
         alert(`🔴 SELL Signal for ${name}\nCurrent Level: ${formatPrice(price)}\n\n⚠️ This is not SEBI-registered investment advice. Always do your own research.`);
     });
+
+    // Pause live ticker when tab is hidden, resume when visible
+    document.addEventListener('visibilitychange', () => {
+        if (document.hidden) {
+            stopLiveTicker();
+        } else {
+            startLiveTicker();
+            // Also do a full refresh when coming back
+            loadMarketData();
+        }
+    });
 }
 
 // ============================================
@@ -800,6 +1011,15 @@ function setupEventListeners() {
 document.addEventListener('DOMContentLoaded', () => {
     setupEventListeners();
     updateMarketStatus();
-    loadMarketData();
-    startAutoRefresh();
+
+    // Load full data first, then start live ticker
+    loadMarketData().then(() => {
+        startLiveTicker();
+    });
+
+    // Full analysis refresh every 30 seconds
+    startFullRefresh();
+
+    // Live "seconds ago" timer display
+    startLiveTimerDisplay();
 });

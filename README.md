@@ -7,8 +7,9 @@ A live **Buy & Sell Signal** web application for Indian stock market indices —
 ### Features
 
 - **Indian Market Indices** — Nifty 50 (NSE), Bank Nifty (NSE), Sensex (BSE)
-- **Live Market Data** — Real-time index levels from Yahoo Finance API
+- **Live Market Data** — Near-real-time index levels from Yahoo Finance API, updated every 1 second
 - **Market Status Indicator** — Shows whether NSE/BSE is Open, Closed, or in Pre-Open session (IST timezone)
+- **LIVE Indicator** — Green pulsing badge with "seconds ago" counter showing data freshness
 - **Buy / Sell Buttons** — Large, visual buttons showing confidence percentages (up to 99%)
 - **7 Technical Indicators** calculated in real time:
   - RSI (Relative Strength Index)
@@ -19,7 +20,9 @@ A live **Buy & Sell Signal** web application for Indian stock market indices —
   - Price vs SMA (30)
   - Volume Trend Analysis
 - **Signal Strength Meter** — Visual gauge from Strong Sell to Strong Buy
-- **Auto-Refresh** — Data updates every 60 seconds
+- **Dual Auto-Refresh** — Live price every 1 second + full analysis every 30 seconds
+- **Price Flash Animation** — Green/red flash on price changes for instant visual feedback
+- **Smart Tab Handling** — Pauses live ticker when tab is hidden, resumes on focus
 - **INR Currency Formatting** — Prices displayed in ₹ with Indian numbering (Lakhs, Crores)
 - **Responsive Design** — Works on desktop and mobile
 - **Dark Theme** — Professional trading-style UI
