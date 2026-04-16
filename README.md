@@ -2,6 +2,12 @@
 
 ## 🇮🇳 Indian Market Signal Dashboard (trading-app)
 
+### 🌐 Live URL
+
+**[https://cpremkumar4709.github.io/MyAssignments/](https://cpremkumar4709.github.io/MyAssignments/)**
+
+> Hosted via GitHub Pages — auto-deployed on every push via GitHub Actions.
+
 A live **Buy & Sell Signal** web application for Indian stock market indices — **Nifty 50**, **Bank Nifty**, and **Sensex**. Generates trading signals with confidence percentages based on multiple technical analysis indicators.
 
 ### Features
