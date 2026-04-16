@@ -535,10 +535,10 @@ function formatPrice(price) {
 }
 
 function formatVolume(volume) {
-    if (volume >= 1e7) return `₹${(volume / 1e7).toFixed(2)} Cr`;
-    if (volume >= 1e5) return `₹${(volume / 1e5).toFixed(2)} L`;
-    if (volume >= 1e3) return `₹${(volume / 1e3).toFixed(2)} K`;
-    return `₹${volume.toFixed(2)}`;
+    if (volume >= 1e7) return `${(volume / 1e7).toFixed(2)} Cr`;
+    if (volume >= 1e5) return `${(volume / 1e5).toFixed(2)} L`;
+    if (volume >= 1e3) return `${(volume / 1e3).toFixed(2)} K`;
+    return volume.toFixed(0);
 }
 
 /**
